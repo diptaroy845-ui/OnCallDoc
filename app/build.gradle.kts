@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.oncalldoc"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.oncalldoc"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -51,7 +51,7 @@ dependencies {
     // -------------------
     // Firebase BOM (manages versions)
     // -------------------
-    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
 
     // Firebase Authentication
     implementation("com.google.firebase:firebase-auth-ktx")
@@ -62,10 +62,7 @@ dependencies {
 
     // Optional: Firebase UI Auth (social login prebuilt UI)
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
-    implementation(libs.firebase.auth)
-    implementation("android.cardview:cardview:1.0.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation(libs.firebase.firestore.ktx)
+
     // -------------------
     // Testing
     // -------------------
