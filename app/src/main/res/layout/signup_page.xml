@@ -18,7 +18,7 @@
             android:layout_height="140dp"
             android:src="@drawable/icon_account_circle"
             android:layout_marginBottom="16dp"
-            android:contentDescription="Login Icon"/>
+            android:contentDescription="Signup Icon" />
 
         <!-- Email -->
         <com.google.android.material.textfield.TextInputLayout
@@ -30,7 +30,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/username_input"
+                android:id="@+id/email_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
@@ -57,12 +57,59 @@
                 android:textColorHint="@color/white"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Login Button -->
-        <Button
-            android:id="@+id/login_btn"
+        <!-- Confirm Password -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Login"
+            android:hint="Confirm Password"
+            app:endIconMode="password_toggle"
+            app:boxStrokeColor="@color/white"
+            android:layout_marginTop="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/confirm_password_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Role Selection -->
+        <RadioGroup
+            android:id="@+id/role_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="center">
+
+            <RadioButton
+                android:id="@+id/radio_patient"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Patient"
+                android:textColor="@color/white"
+                android:buttonTint="@color/white"
+                android:padding="8dp"/>
+
+            <RadioButton
+                android:id="@+id/radio_doctor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Doctor"
+                android:textColor="@color/white"
+                android:buttonTint="@color/white"
+                android:padding="8dp"/>
+        </RadioGroup>
+
+        <!-- Signup Button -->
+        <Button
+            android:id="@+id/signup_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sign Up"
             android:backgroundTint="@color/white"
             android:textColor="#328ED5"
             android:layout_marginTop="20dp"
@@ -78,7 +125,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="12dp"/>
 
-        <!-- Redirect to Signup -->
+        <!-- Redirect to Login -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -87,15 +134,15 @@
             android:layout_marginTop="16dp">
 
             <TextView
-                android:text="Don't have an account? "
+                android:text="Already have an account? "
                 android:textColor="@color/white"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:textSize="16sp"/>
 
             <TextView
-                android:id="@+id/signup_btn"
-                android:text="Sign Up"
+                android:id="@+id/login_redirect"
+                android:text="Login"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:textColor="@color/white"
