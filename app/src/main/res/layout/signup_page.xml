@@ -18,13 +18,13 @@
             android:layout_height="140dp"
             android:src="@drawable/icon_account_circle"
             android:layout_marginBottom="16dp"
-            android:contentDescription="Signup Icon" />
+            android:contentDescription="@string/signup_icon" />
 
         <!-- Email -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
+            android:hint="@string/email"
             app:boxStrokeColor="@color/white"
             app:hintTextColor="@color/white"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -42,7 +42,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
+            android:hint="@string/password"
             app:endIconMode="password_toggle"
             app:boxStrokeColor="@color/white"
             android:layout_marginTop="12dp"
@@ -61,7 +61,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Confirm Password"
+            android:hint="@string/confirm_password"
             app:endIconMode="password_toggle"
             app:boxStrokeColor="@color/white"
             android:layout_marginTop="12dp"
@@ -89,7 +89,7 @@
                 android:id="@+id/radio_patient"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Patient"
+                android:text="@string/patient"
                 android:textColor="@color/white"
                 android:buttonTint="@color/white"
                 android:padding="8dp"/>
@@ -98,7 +98,7 @@
                 android:id="@+id/radio_doctor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Doctor"
+                android:text="@string/doctor"
                 android:textColor="@color/white"
                 android:buttonTint="@color/white"
                 android:padding="8dp"/>
@@ -109,7 +109,7 @@
             android:id="@+id/signup_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sign Up"
+            android:text="@string/sign_up"
             android:backgroundTint="@color/white"
             android:textColor="#328ED5"
             android:layout_marginTop="20dp"
@@ -134,7 +134,7 @@
             android:layout_marginTop="16dp">
 
             <TextView
-                android:text="Already have an account? "
+                android:text="@string/already_have_an_account"
                 android:textColor="@color/white"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
@@ -142,7 +142,7 @@
 
             <TextView
                 android:id="@+id/login_redirect"
-                android:text="Login"
+                android:text="@string/login"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:textColor="@color/white"

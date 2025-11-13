@@ -46,17 +46,17 @@ class SignupActivity : AppCompatActivity() {
             val selectedRoleId = roleGroup.checkedRadioButtonId
 
             if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.please_fill_all_fields), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (password != confirmPassword) {
-                Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.passwords_do_not_match), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (selectedRoleId == -1) {
-                Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.please_select_a_role), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -80,25 +80,21 @@ class SignupActivity : AppCompatActivity() {
                         firestore.collection("users").document(uid)
                             .set(userMap)
                             .addOnSuccessListener {
-                                Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.signup_successful), Toast.LENGTH_SHORT).show()
                                 loadingSpinner.visibility = View.GONE
                                 signupBtn.isEnabled = true
 
-                                // Redirect based on role
-                                if (role == "patient") {
-                                    startActivity(Intent(this, PatientHomeActivity::class.java))
-                                } else {
-                                    startActivity(Intent(this, DoctorHomeActivity::class.java))
-                                }
+                                // Redirect to login
+                                startActivity(Intent(this, LoginActivity::class.java))
                                 finish()
                             }
                             .addOnFailureListener { e ->
-                                Toast.makeText(this, "Error saving user: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.error_saving_user, e.message), Toast.LENGTH_SHORT).show()
                                 loadingSpinner.visibility = View.GONE
                                 signupBtn.isEnabled = true
                             }
                     } else {
-                        Toast.makeText(this, "Signup failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.signup_failed, task.exception?.message), Toast.LENGTH_SHORT).show()
                         loadingSpinner.visibility = View.GONE
                         signupBtn.isEnabled = true
                     }

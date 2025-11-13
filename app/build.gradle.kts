@@ -63,6 +63,11 @@ dependencies {
     // Optional: Firebase UI Auth (social login prebuilt UI)
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
 
+    // Geolocation
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.firebase:geofire-android-common:3.2.0")
+    implementation(libs.firebase.firestore)
+
     // -------------------
     // Testing
     // -------------------

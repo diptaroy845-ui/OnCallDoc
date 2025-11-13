@@ -1,3 +1,21 @@
 <resources>
     <string name="app_name">On Call Doc</string>
+    <string name="please_fill_all_fields">Please fill all fields</string>
+    <string name="login_successful">Login successful!</string>
+    <string name="error_fetching_role">Error fetching role: %s</string>
+    <string name="login_failed">Login failed: %s</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="please_select_a_role">Please select a role</string>
+    <string name="signup_successful">Signup successful!</string>
+    <string name="error_saving_user">Error saving user: %s</string>
+    <string name="signup_failed">Signup failed: %s</string>
+    <string name="signup_icon">Signup Icon</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="patient">Patient</string>
+    <string name="doctor">Doctor</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="already_have_an_account">Already have an account?</string>
+    <string name="login">Login</string>
 </resources>
