@@ -1,21 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
     <TextView
+        android:id="@+id/welcome_doctor_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"
         android:text="Welcome, Doctor!"
         android:textSize="24sp" />
 
-    <Button
-        android:id="@+id/update_location_btn"
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/online_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Update Location"
-        android:layout_marginTop="20dp"/>
+        android:layout_below="@id/welcome_doctor_text"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:text="Offline" />
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/orders_count_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/online_switch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"
+        android:text="You have 0 orders"
+        android:textSize="20sp" />
+
+</RelativeLayout>

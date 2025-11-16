@@ -2,11 +2,13 @@ package com.example.oncalldoc
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 
 class SignupActivity : AppCompatActivity() {
@@ -50,6 +52,11 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                Toast.makeText(this, getString(R.string.invalid_email), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (password != confirmPassword) {
                 Toast.makeText(this, getString(R.string.passwords_do_not_match), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -80,6 +87,14 @@ class SignupActivity : AppCompatActivity() {
                         firestore.collection("users").document(uid)
                             .set(userMap)
                             .addOnSuccessListener {
+                                auth.currentUser?.sendEmailVerification()
+                                    ?.addOnSuccessListener {
+                                        Toast.makeText(this, getString(R.string.verification_email_sent), Toast.LENGTH_SHORT).show()
+                                    }
+                                    ?.addOnFailureListener {
+                                        Toast.makeText(this, getString(R.string.verification_email_failed), Toast.LENGTH_SHORT).show()
+                                    }
+
                                 Toast.makeText(this, getString(R.string.signup_successful), Toast.LENGTH_SHORT).show()
                                 loadingSpinner.visibility = View.GONE
                                 signupBtn.isEnabled = true
@@ -94,7 +109,11 @@ class SignupActivity : AppCompatActivity() {
                                 signupBtn.isEnabled = true
                             }
                     } else {
-                        Toast.makeText(this, getString(R.string.signup_failed, task.exception?.message), Toast.LENGTH_SHORT).show()
+                        if (task.exception is FirebaseAuthUserCollisionException) {
+                            Toast.makeText(this, getString(R.string.email_already_in_use), Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, getString(R.string.signup_failed, task.exception?.message), Toast.LENGTH_SHORT).show()
+                        }
                         loadingSpinner.visibility = View.GONE
                         signupBtn.isEnabled = true
                     }

@@ -18,4 +18,8 @@
     <string name="sign_up">Sign Up</string>
     <string name="already_have_an_account">Already have an account?</string>
     <string name="login">Login</string>
+    <string name="invalid_email">Please enter a valid email address</string>
+    <string name="email_already_in_use">This email address is already in use.</string>
+    <string name="verification_email_sent">Verification email sent.</string>
+    <string name="verification_email_failed">Failed to send verification email.</string>
 </resources>
