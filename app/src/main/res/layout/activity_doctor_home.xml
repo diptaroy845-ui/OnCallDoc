@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:gravity="center"
-        android.orientation="vertical">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/welcome_doctor_text"
