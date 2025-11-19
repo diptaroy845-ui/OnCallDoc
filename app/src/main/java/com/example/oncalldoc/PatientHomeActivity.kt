@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -50,6 +51,7 @@ class PatientHomeActivity : AppCompatActivity() {
     private lateinit var findDoctorBtn: Button
     private lateinit var backButton: ImageButton
     private lateinit var activeLocationButton: Button
+    private lateinit var progressBar: ProgressBar
     private var pendingLocationAction: (() -> Unit)? = null
 
     private val doctors = mutableListOf<Doctor>()
@@ -95,6 +97,7 @@ class PatientHomeActivity : AppCompatActivity() {
         specialitySpinner = findViewById(R.id.speciality_spinner)
         findDoctorBtn = findViewById(R.id.find_doctor_btn)
         activeLocationButton = findViewById(R.id.active_location_button)
+        progressBar = findViewById(R.id.progressBar)
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, specialities)
         specialitySpinner.adapter = adapter
@@ -182,6 +185,9 @@ class PatientHomeActivity : AppCompatActivity() {
         ) {
            return
         }
+        
+        progressBar.visibility = View.VISIBLE
+        
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             .addOnSuccessListener { location: Location? ->
                 if (location != null) {
@@ -205,6 +211,7 @@ class PatientHomeActivity : AppCompatActivity() {
 
                     Tasks.whenAllComplete(tasks)
                         .addOnSuccessListener { 
+                            progressBar.visibility = View.GONE
                             val matchingDocs = mutableListOf<Doctor>()
                             for (task in tasks) {
                                 if (task.isSuccessful) {
@@ -239,7 +246,11 @@ class PatientHomeActivity : AppCompatActivity() {
                             }
 
                         }
+                        .addOnFailureListener {
+                            progressBar.visibility = View.GONE
+                        }
                 } else {
+                    progressBar.visibility = View.GONE
                     Toast.makeText(this, "Could not get location.", Toast.LENGTH_SHORT).show()
                 }
             }
