@@ -100,11 +100,7 @@ class PatientHomeActivity : AppCompatActivity() {
         specialitySpinner.adapter = adapter
 
         findDoctorBtn.setOnClickListener {
-            val selectedSpeciality = specialitySpinner.selectedItem.toString()
-            val intent = Intent(this, MapsActivity::class.java).apply {
-                putExtra("SPECIALITY", selectedSpeciality)
-            }
-            startActivity(intent)
+            checkLocationPermissionAndSettings { findNearbyDoctors() }
         }
 
         activeLocationButton.setOnClickListener {
@@ -139,7 +135,7 @@ class PatientHomeActivity : AppCompatActivity() {
         val client: SettingsClient = LocationServices.getSettingsClient(this)
         val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
 
-        task.addOnSuccessListener {
+        task.addOnSuccessListener { 
             action.invoke()
         }
 
@@ -232,7 +228,7 @@ class PatientHomeActivity : AppCompatActivity() {
                             }
 
                             matchingDocs.sortBy { it.distance }
-                            runOnUiThread {
+                            runOnUiThread { 
                                 doctorAdapter = DoctorAdapter(matchingDocs) { doctor ->
                                     placeOrder(doctor)
                                 }

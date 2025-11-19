@@ -49,11 +49,6 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
 
     // -------------------
-    // Google Maps
-    // -------------------
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-
-    // -------------------
     // Firebase BOM (manages versions)
     // -------------------
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
