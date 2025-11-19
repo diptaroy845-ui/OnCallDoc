@@ -22,4 +22,12 @@
     <string name="email_already_in_use">This email address is already in use.</string>
     <string name="verification_email_sent">Verification email sent.</string>
     <string name="verification_email_failed">Failed to send verification email.</string>
+    <string name="offline">Offline</string>
+    <string name="orders">You have 0 orders</string>
+    <string name="welcomeDoctorMessage">Welcome, Doctor!</string>
+    <string name="welcomePatientMessage">Welcome, Patient!</string>
+    <string name="speciality">Select a Speciality</string>
+    <string name="findDoctor">Find a doctor</string>
+    <string name="active">Active Location</string>
+    <string name="title_activity_maps">Map</string>
 </resources>

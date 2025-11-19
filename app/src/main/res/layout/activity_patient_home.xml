@@ -5,6 +5,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:contentDescription="Go back"
+        android:src="@drawable/goback"
+        android:id="@+id/backFromPatientHome"
+        />
 
     <TextView
         android:id="@+id/welcome_patient_text"
@@ -12,7 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="32dp"
-        android:text="Welcome, Patient!"
+        android:text="@string/welcomePatientMessage"
         android:textSize="24sp"
         android:textStyle="bold" />
 
@@ -33,7 +41,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Select a Speciality"
+                android:text="@string/speciality"
                 android:textSize="18sp" />
 
             <Spinner
@@ -41,13 +49,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp" />
-
+            <Button
+                android:id="@+id/active_location_button"
+                android:layout_marginTop="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/active"
+                android:drawableLeft="@drawable/location"
+                />
             <Button
                 android:id="@+id/find_doctor_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Find a Doctor" />
+                android:text="@string/findDoctor" />
+
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>

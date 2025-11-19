@@ -6,7 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class DoctorAdapter(private val doctors: List<Doctor>) : RecyclerView.Adapter<DoctorAdapter.DoctorViewHolder>() {
+class DoctorAdapter(
+    private val doctors: List<Doctor>,
+    private val onItemClick: (Doctor) -> Unit
+) : RecyclerView.Adapter<DoctorAdapter.DoctorViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DoctorViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.doctor_list_item, parent, false)
@@ -20,7 +23,7 @@ class DoctorAdapter(private val doctors: List<Doctor>) : RecyclerView.Adapter<Do
 
     override fun getItemCount() = doctors.size
 
-    class DoctorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class DoctorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.doctor_name)
         private val specialityTextView: TextView = itemView.findViewById(R.id.doctor_speciality)
         private val distanceTextView: TextView = itemView.findViewById(R.id.doctor_distance)
@@ -28,7 +31,11 @@ class DoctorAdapter(private val doctors: List<Doctor>) : RecyclerView.Adapter<Do
         fun bind(doctor: Doctor) {
             nameTextView.text = doctor.name
             specialityTextView.text = doctor.speciality
-            distanceTextView.text = String.format("%.2f km away", doctor.distance / 1000)
+            distanceTextView.text = String.format("%.2f km away", doctor.distance / 1000.0)
+
+            itemView.setOnClickListener {
+                onItemClick(doctor)
+            }
         }
     }
 }

@@ -1,36 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/welcome_doctor_text"
+    <ImageButton
+        android:id="@+id/backFromDocHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:text="Welcome, Doctor!"
-        android:textSize="24sp" />
+        android:layout_marginTop="30dp"
+        android:contentDescription="Go back"
+        android:src="@drawable/goback" />
 
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/online_switch"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/welcome_doctor_text"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:text="Offline" />
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/orders_count_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/online_switch"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:text="You have 0 orders"
-        android:textSize="20sp" />
+        <TextView
+            android:id="@+id/welcome_doctor_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="@string/welcomeDoctorMessage"
+            android:textSize="24sp" />
 
-</RelativeLayout>
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/online_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/offline" />
+
+        <Button
+            android:id="@+id/update_location_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Update Location" />
+
+        <TextView
+            android:id="@+id/orders_count_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="@string/orders"
+            android:textSize="20sp" />
+
+    </LinearLayout>
+
+</LinearLayout>
