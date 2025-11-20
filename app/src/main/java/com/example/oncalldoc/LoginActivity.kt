@@ -75,7 +75,7 @@ class LoginActivity : AppCompatActivity() {
                                         startActivity(Intent(this, DoctorHomeActivity::class.java))
                                     }
                                 }
-                                finish()
+                                finish() // This line is now restored to fix the crash.
                             }
                             .addOnFailureListener { e ->
                                 Toast.makeText(this, getString(R.string.error_fetching_role, e.message), Toast.LENGTH_SHORT).show()

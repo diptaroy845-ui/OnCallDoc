@@ -13,9 +13,7 @@
         android:layout_marginTop="30dp"
         android:background="@android:color/transparent"
         android:contentDescription="Go back"
-        android:src="@drawable/goback"
-        android:focusable="true"
-        />
+        android:src="@drawable/goback" />
 
     <TextView
         android:id="@+id/welcome_patient_text"
@@ -42,26 +40,14 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/speciality"
-                android:textSize="18sp" />
-
-            <Spinner
-                android:id="@+id/speciality_spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" />
-
             <Button
                 android:id="@+id/active_location_button"
+                android:layout_marginTop="20dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:text="@string/active"
                 android:drawableLeft="@drawable/location"
-                android:text="@string/active" />
-
+                />
             <Button
                 android:id="@+id/find_doctor_btn"
                 android:layout_width="match_parent"
@@ -73,14 +59,6 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
-
     <!-- Header for doctors list -->
     <TextView
         android:id="@+id/doctors_list_header"
@@ -90,7 +68,7 @@
         android:text="Nearby Doctors"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:visibility="gone" />
+        android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/doctors_recycler_view"
