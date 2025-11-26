@@ -24,8 +24,7 @@ import com.google.android.gms.maps.model.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
-import com.google.android.gms.tasks.Tasks
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.ListenerRegistration
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -34,6 +33,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var firestore: FirebaseFirestore
     private var patientLocation: Location? = null
     private lateinit var backButton: ImageButton
+
+    private val doctorMarkers = mutableMapOf<String, Marker>()
+    private val firestoreListeners = mutableListOf<ListenerRegistration>()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -69,7 +71,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val paddingBottomInPx = 150
         mMap.setPadding(0, paddingTopInPx, 0, paddingBottomInPx)
 
-        // Listener for our custom doctor markers
         mMap.setOnInfoWindowClickListener { marker ->
             val doctor = marker.tag as? Doctor
             if (doctor != null) {
@@ -77,13 +78,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        // Listener for the map's default points of interest
         mMap.setOnPoiClickListener { poi ->
-            val poiMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(poi.latLng)
-                    .title(poi.name)
-            )
+            val poiMarker = mMap.addMarker(MarkerOptions().position(poi.latLng).title(poi.name))
             poiMarker?.showInfoWindow()
         }
 
@@ -117,10 +113,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun checkPermissionAndGetLocation() {
         when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
                 getCurrentPatientLocation()
             }
             else -> {
@@ -142,14 +135,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     patientLocation = location
                     val patientLatLng = LatLng(location.latitude, location.longitude)
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 13f))
-                    mMap.addCircle(
-                        CircleOptions()
-                            .center(patientLatLng)
-                            .radius(2000.0)
-                            .strokeColor(Color.BLUE)
-                            .strokeWidth(2f)
-                            .fillColor(Color.parseColor("#220000FF"))
-                    )
+                    mMap.addCircle(CircleOptions().center(patientLatLng).radius(2000.0).strokeColor(Color.BLUE).strokeWidth(2f).fillColor(Color.parseColor("#220000FF")))
                     findAndDisplayDoctors()
                 } else {
                     Toast.makeText(this, "Could not get your location.", Toast.LENGTH_SHORT).show()
@@ -158,54 +144,72 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun findAndDisplayDoctors() {
+        if (patientLocation == null) return
+
         val center = GeoLocation(patientLocation!!.latitude, patientLocation!!.longitude)
         val radiusInM = 50 * 1000.0
 
         val bounds = GeoFireUtils.getGeoHashQueryBounds(center, radiusInM)
-        val tasks = mutableListOf<com.google.android.gms.tasks.Task<QuerySnapshot>>()
+
+        // Clear existing listeners
+        firestoreListeners.forEach { it.remove() }
+        firestoreListeners.clear()
 
         for (b in bounds) {
             val query = firestore.collection("users")
                 .whereEqualTo("role", "doctor")
-                .whereEqualTo("isOnline", true)
                 .orderBy("geohash")
                 .startAt(b.startHash)
                 .endAt(b.endHash)
-            tasks.add(query.get())
-        }
 
-        Tasks.whenAllComplete(tasks)
-            .addOnSuccessListener { 
-                for (task in tasks) {
-                    if (task.isSuccessful) {
-                        val snap = task.result as QuerySnapshot
-                        for (doc in snap.documents) {
-                            val doctor = doc.toObject(Doctor::class.java)
-                            if (doctor != null) {
-                                val lat = doc.getDouble("latitude") ?: 0.0
-                                val lon = doc.getDouble("longitude") ?: 0.0
+            val listener = query.addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    return@addSnapshotListener
+                }
 
-                                val docLocation = Location("")
-                                docLocation.latitude = lat
-                                docLocation.longitude = lon
+                for (doc in snapshots!!.documents) {
+                    val doctor = doc.toObject(Doctor::class.java)
+                    if (doctor != null && doc.getBoolean("isOnline") == true) {
+                        // Add or update marker
+                        val doctorUid = doc.id
+                        val lat = doc.getDouble("latitude") ?: 0.0
+                        val lon = doc.getDouble("longitude") ?: 0.0
+                        val doctorLatLng = LatLng(lat, lon)
 
-                                val distanceInM = patientLocation!!.distanceTo(docLocation)
-
-                                val doctorLatLng = LatLng(lat, lon)
-                                val distanceInKm = distanceInM / 1000.0
-                                val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
-
-                                val marker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(doctorLatLng)
-                                        .title(markerTitle)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                                )
-                                marker?.tag = doctor
+                        val existingMarker = doctorMarkers[doctorUid]
+                        if (existingMarker == null) {
+                            val distanceInM = patientLocation!!.distanceTo(Location("").apply { latitude = lat; longitude = lon })
+                            val distanceInKm = distanceInM / 1000.0
+                            val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                            val marker = mMap.addMarker(
+                                MarkerOptions()
+                                    .position(doctorLatLng)
+                                    .title(markerTitle)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                            )
+                            marker?.tag = doctor
+                            if (marker != null) {
+                                doctorMarkers[doctorUid] = marker
                             }
+                        } else {
+                            // Optionally update existing marker position if it can change
+                            existingMarker.position = doctorLatLng
                         }
+                    } else {
+                        // Remove marker if doctor is offline or doesn't exist
+                        val doctorUid = doc.id
+                        doctorMarkers[doctorUid]?.remove()
+                        doctorMarkers.remove(doctorUid)
                     }
                 }
             }
+            firestoreListeners.add(listener)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up listeners to prevent memory leaks
+        firestoreListeners.forEach { it.remove() }
     }
 }
