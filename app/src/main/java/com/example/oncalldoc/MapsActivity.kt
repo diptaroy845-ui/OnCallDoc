@@ -64,6 +64,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap.uiSettings.isZoomControlsEnabled = true // This enables the +/- buttons
+        
+        // Add padding to the bottom of the map to move the Google UI controls up
+        val paddingBottomInPx = 150 // 150 pixels from the bottom
+        mMap.setPadding(0, 0, 0, paddingBottomInPx)
+
         checkPermissionAndGetLocation()
     }
 
@@ -146,10 +152,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             val distanceInM = patientLocation!!.distanceTo(docLocation)
 
                             val doctorLatLng = LatLng(lat, lon)
-                            var markerTitle = doctorName
-                            if (distanceInM > 2000) {
-                                markerTitle += String.format(" (%.2fkm away)", distanceInM / 1000.0)
-                            }
+                            // Always show the distance in the marker title
+                            val distanceInKm = distanceInM / 1000.0
+                            val markerTitle = String.format("%s (%.2fkm away)", doctorName, distanceInKm)
 
                             mMap.addMarker(
                                 MarkerOptions()

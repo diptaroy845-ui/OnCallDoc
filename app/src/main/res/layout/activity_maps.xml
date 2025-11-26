@@ -15,9 +15,9 @@
         android:id="@+id/back_from_maps_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="start|top"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="30dp"
-        android:background="@android:color/transparent"
+        android:layout_marginTop="48dp"        android:background="@android:color/transparent"
         android:contentDescription="Go back"
         android:src="@drawable/goback" />
 

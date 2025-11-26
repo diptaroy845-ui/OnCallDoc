@@ -23,18 +23,15 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login_page)
 
-        // Initialize Firebase
         auth = FirebaseAuth.getInstance()
         firestore = FirebaseFirestore.getInstance()
 
-        // Bind UI
         emailInput = findViewById(R.id.email_input)
         passwordInput = findViewById(R.id.password_input)
         loginBtn = findViewById(R.id.login_btn)
         signupRedirect = findViewById(R.id.signup_btn)
         loadingSpinner = findViewById(R.id.loading_spinner)
 
-        // Login Button
         loginBtn.setOnClickListener {
             val email = emailInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
@@ -50,38 +47,7 @@ class LoginActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        val uid = auth.currentUser?.uid ?: ""
-
-                        // Fetch role from Firestore
-                        firestore.collection("users").document(uid).get()
-                            .addOnSuccessListener { doc ->
-                                val role = doc.getString("role") ?: "patient"
-                                val name = doc.getString("name")
-
-                                Toast.makeText(this, getString(R.string.login_successful), Toast.LENGTH_SHORT).show()
-                                loadingSpinner.visibility = View.GONE
-                                loginBtn.isEnabled = true
-
-                                if (name == null) {
-                                    if (role == "patient") {
-                                        startActivity(Intent(this, CreatePatientProfileActivity::class.java))
-                                    } else {
-                                        startActivity(Intent(this, CreateDoctorProfileActivity::class.java))
-                                    }
-                                } else {
-                                    if (role == "patient") {
-                                        startActivity(Intent(this, PatientHomeActivity::class.java))
-                                    } else {
-                                        startActivity(Intent(this, DoctorHomeActivity::class.java))
-                                    }
-                                }
-                                finish() // This line is now restored to fix the crash.
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(this, getString(R.string.error_fetching_role, e.message), Toast.LENGTH_SHORT).show()
-                                loadingSpinner.visibility = View.GONE
-                                loginBtn.isEnabled = true
-                            }
+                        redirectUser(task.result.user!!.uid)
                     } else {
                         Toast.makeText(this, getString(R.string.login_failed, task.exception?.message), Toast.LENGTH_SHORT).show()
                         loadingSpinner.visibility = View.GONE
@@ -90,10 +56,37 @@ class LoginActivity : AppCompatActivity() {
                 }
         }
 
-        // Redirect to Signup
         signupRedirect.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
-            finish()
         }
+    }
+
+    private fun redirectUser(uid: String) {
+        firestore.collection("users").document(uid).get()
+            .addOnSuccessListener { doc ->
+                val role = doc.getString("role") ?: "patient"
+                val name = doc.getString("name")
+
+                if (name == null) {
+                    val intent = if (role == "patient") {
+                        Intent(this, CreatePatientProfileActivity::class.java)
+                    } else {
+                        Intent(this, CreateDoctorProfileActivity::class.java)
+                    }
+                    startActivity(intent)
+                } else {
+                    val intent = if (role == "patient") {
+                        Intent(this, PatientHomeActivity::class.java)
+                    } else {
+                        Intent(this, DoctorHomeActivity::class.java)
+                    }
+                    startActivity(intent)
+                }
+                finish() // Destroy LoginActivity so user can't go back to it
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, getString(R.string.error_fetching_role, e.message), Toast.LENGTH_SHORT).show()
+                recreate()
+            }
     }
 }
