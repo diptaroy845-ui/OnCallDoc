@@ -8,6 +8,7 @@ import android.location.Location
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,7 +36,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var backButton: ImageButton
 
     private val doctorMarkers = mutableMapOf<String, Marker>()
-    private val firestoreListeners = mutableListOf<ListenerRegistration>()
+    private var firestoreListener: ListenerRegistration? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -113,7 +114,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun checkPermissionAndGetLocation() {
         when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
                 getCurrentPatientLocation()
             }
             else -> {
@@ -134,82 +138,64 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (location != null) {
                     patientLocation = location
                     val patientLatLng = LatLng(location.latitude, location.longitude)
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 13f))
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 10f)) // Zoom out a bit more
                     mMap.addCircle(CircleOptions().center(patientLatLng).radius(2000.0).strokeColor(Color.BLUE).strokeWidth(2f).fillColor(Color.parseColor("#220000FF")))
-                    findAndDisplayDoctors()
+                    listenForDoctorUpdates()
                 } else {
                     Toast.makeText(this, "Could not get your location.", Toast.LENGTH_SHORT).show()
                 }
             }
     }
 
-    private fun findAndDisplayDoctors() {
+    private fun listenForDoctorUpdates() {
         if (patientLocation == null) return
 
-        val center = GeoLocation(patientLocation!!.latitude, patientLocation!!.longitude)
-        val radiusInM = 50 * 1000.0
+        firestoreListener?.remove() // Remove any old listener
 
-        val bounds = GeoFireUtils.getGeoHashQueryBounds(center, radiusInM)
+        val query = firestore.collection("users")
+            .whereEqualTo("role", "doctor")
+            .whereEqualTo("isOnline", true)
 
-        // Clear existing listeners
-        firestoreListeners.forEach { it.remove() }
-        firestoreListeners.clear()
+        firestoreListener = query.addSnapshotListener { snapshots, e ->
+            if (e != null) {
+                Log.w("MapsActivity", "Listen failed.", e)
+                // This is where you will see the error about the missing index
+                Toast.makeText(this, "Error fetching doctors. Check Logcat for index link.", Toast.LENGTH_LONG).show()
+                return@addSnapshotListener
+            }
 
-        for (b in bounds) {
-            val query = firestore.collection("users")
-                .whereEqualTo("role", "doctor")
-                .orderBy("geohash")
-                .startAt(b.startHash)
-                .endAt(b.endHash)
+            mMap.clear() // Clear all markers before redrawing
+            // Re-add patient's circle every time we redraw
+            val patientLatLng = LatLng(patientLocation!!.latitude, patientLocation!!.longitude)
+            mMap.addCircle(CircleOptions().center(patientLatLng).radius(2000.0).strokeColor(Color.BLUE).strokeWidth(2f).fillColor(Color.parseColor("#220000FF")))
 
-            val listener = query.addSnapshotListener { snapshots, e ->
-                if (e != null) {
-                    return@addSnapshotListener
-                }
 
-                for (doc in snapshots!!.documents) {
-                    val doctor = doc.toObject(Doctor::class.java)
-                    if (doctor != null && doc.getBoolean("isOnline") == true) {
-                        // Add or update marker
-                        val doctorUid = doc.id
-                        val lat = doc.getDouble("latitude") ?: 0.0
-                        val lon = doc.getDouble("longitude") ?: 0.0
-                        val doctorLatLng = LatLng(lat, lon)
+            for (doc in snapshots!!.documents) {
+                val doctor = doc.toObject(Doctor::class.java)
+                if (doctor?.latitude != null && doctor.longitude != null) {
+                    val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
+                    
+                    val docLocation = Location("")
+                    docLocation.latitude = doctor.latitude
+                    docLocation.longitude = doctor.longitude
+                    val distanceInM = patientLocation!!.distanceTo(docLocation)
+                    val distanceInKm = distanceInM / 1000.0
+                    val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
 
-                        val existingMarker = doctorMarkers[doctorUid]
-                        if (existingMarker == null) {
-                            val distanceInM = patientLocation!!.distanceTo(Location("").apply { latitude = lat; longitude = lon })
-                            val distanceInKm = distanceInM / 1000.0
-                            val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
-                            val marker = mMap.addMarker(
-                                MarkerOptions()
-                                    .position(doctorLatLng)
-                                    .title(markerTitle)
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                            )
-                            marker?.tag = doctor
-                            if (marker != null) {
-                                doctorMarkers[doctorUid] = marker
-                            }
-                        } else {
-                            // Optionally update existing marker position if it can change
-                            existingMarker.position = doctorLatLng
-                        }
-                    } else {
-                        // Remove marker if doctor is offline or doesn't exist
-                        val doctorUid = doc.id
-                        doctorMarkers[doctorUid]?.remove()
-                        doctorMarkers.remove(doctorUid)
-                    }
+                    val marker = mMap.addMarker(
+                        MarkerOptions()
+                            .position(doctorLatLng)
+                            .title(markerTitle)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                    )
+                    marker?.tag = doctor
                 }
             }
-            firestoreListeners.add(listener)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Clean up listeners to prevent memory leaks
-        firestoreListeners.forEach { it.remove() }
+        firestoreListener?.remove()
     }
 }
