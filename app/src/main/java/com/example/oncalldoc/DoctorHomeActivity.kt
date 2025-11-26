@@ -15,8 +15,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.common.api.ResolvableApiException
@@ -37,13 +35,11 @@ class DoctorHomeActivity : AppCompatActivity() {
     private lateinit var firestore: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
     private lateinit var onlineSwitch: SwitchMaterial
-    private lateinit var ordersRecyclerView: RecyclerView
+    private lateinit var ordersCountText: TextView
     private lateinit var backButton: ImageButton
     private lateinit var updateLocationButton: Button
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var pendingLocationAction: (() -> Unit)? = null
-    private lateinit var orderAdapter: OrderAdapter
-    private val orders = mutableListOf<Order>()
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -72,17 +68,11 @@ class DoctorHomeActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         onlineSwitch = findViewById(R.id.online_switch)
-        ordersRecyclerView = findViewById(R.id.orders_recycler_view)
+        ordersCountText = findViewById(R.id.orders_count_text)
         backButton = findViewById(R.id.backFromDocHome)
         updateLocationButton = findViewById(R.id.update_location_button)
 
-        ordersRecyclerView.layoutManager = LinearLayoutManager(this)
-        orderAdapter = OrderAdapter(orders)
-        ordersRecyclerView.adapter = orderAdapter
-
         backButton.setOnClickListener {
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
             finish()
         }
 
@@ -106,13 +96,17 @@ class DoctorHomeActivity : AppCompatActivity() {
                     .addOnSuccessListener {
                         onlineSwitch.text = if (isChecked) "Online" else "Offline"
                         Toast.makeText(this, "Status updated", Toast.LENGTH_SHORT).show()
+                        if (isChecked) {
+                            // When doctor goes online, automatically update their location
+                            checkLocationPermissionAndSettings { updateDoctorLocation() }
+                        }
                     }
                     .addOnFailureListener { 
                         Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
                     }
             }
 
-            // Listen for order changes
+            // Listen for order count changes
             firestore.collection("orders")
                 .whereEqualTo("doctorId", uid)
                 .addSnapshotListener { snapshots, e ->
@@ -120,14 +114,8 @@ class DoctorHomeActivity : AppCompatActivity() {
                         return@addSnapshotListener
                     }
 
-                    orders.clear()
-                    for (doc in snapshots!!.documents) {
-                        val order = doc.toObject(Order::class.java)
-                        if (order != null) {
-                            orders.add(order)
-                        }
-                    }
-                    orderAdapter.notifyDataSetChanged()
+                    val count = snapshots?.size() ?: 0
+                    ordersCountText.text = "You have $count orders"
                 }
         }
     }
