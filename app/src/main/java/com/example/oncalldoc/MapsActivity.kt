@@ -1,14 +1,17 @@
 package com.example.oncalldoc
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -17,10 +20,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CircleOptions
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
@@ -64,13 +64,55 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.uiSettings.isZoomControlsEnabled = true // This enables the +/- buttons
-        
-        // Add padding to the bottom of the map to move the Google UI controls up
-        val paddingBottomInPx = 150 // 150 pixels from the bottom
-        mMap.setPadding(0, 0, 0, paddingBottomInPx)
+        mMap.uiSettings.isZoomControlsEnabled = true
+        val paddingTopInPx = 150
+        val paddingBottomInPx = 150
+        mMap.setPadding(0, paddingTopInPx, 0, paddingBottomInPx)
+
+        // Listener for our custom doctor markers
+        mMap.setOnInfoWindowClickListener { marker ->
+            val doctor = marker.tag as? Doctor
+            if (doctor != null) {
+                showContactDialog(doctor)
+            }
+        }
+
+        // Listener for the map's default points of interest
+        mMap.setOnPoiClickListener { poi ->
+            val poiMarker = mMap.addMarker(
+                MarkerOptions()
+                    .position(poi.latLng)
+                    .title(poi.name)
+            )
+            poiMarker?.showInfoWindow()
+        }
 
         checkPermissionAndGetLocation()
+    }
+
+    private fun showContactDialog(doctor: Doctor) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Contact ${doctor.name}")
+        builder.setMessage("How would you like to contact the doctor?")
+
+        builder.setPositiveButton("Call") { _, _ ->
+            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${doctor.phone}"))
+            startActivity(intent)
+        }
+
+        builder.setNeutralButton("Chat") { _, _ ->
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra("DOCTOR_UID", doctor.uid)
+            intent.putExtra("DOCTOR_NAME", doctor.name)
+            startActivity(intent)
+        }
+
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
     }
 
     private fun checkPermissionAndGetLocation() {
@@ -89,28 +131,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun getCurrentPatientLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return // Should not happen due to the check above, but as a safeguard.
+            return
         }
 
-        mMap.isMyLocationEnabled = true // Show the blue dot for the user's location
+        mMap.isMyLocationEnabled = true
 
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             .addOnSuccessListener { location: Location? ->
                 if (location != null) {
                     patientLocation = location
                     val patientLatLng = LatLng(location.latitude, location.longitude)
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 13f)) // Zoom out a bit to see the circle
-
-                    // Add a 2km radius circle around the patient
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 13f))
                     mMap.addCircle(
                         CircleOptions()
                             .center(patientLatLng)
-                            .radius(2000.0) // 2km in meters
+                            .radius(2000.0)
                             .strokeColor(Color.BLUE)
                             .strokeWidth(2f)
-                            .fillColor(Color.parseColor("#220000FF")) // Semi-transparent blue
+                            .fillColor(Color.parseColor("#220000FF"))
                     )
-
                     findAndDisplayDoctors()
                 } else {
                     Toast.makeText(this, "Could not get your location.", Toast.LENGTH_SHORT).show()
@@ -141,27 +180,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (task.isSuccessful) {
                         val snap = task.result as QuerySnapshot
                         for (doc in snap.documents) {
-                            val lat = doc.getDouble("latitude") ?: 0.0
-                            val lon = doc.getDouble("longitude") ?: 0.0
-                            val doctorName = doc.getString("name") ?: "Doctor"
+                            val doctor = doc.toObject(Doctor::class.java)
+                            if (doctor != null) {
+                                val lat = doc.getDouble("latitude") ?: 0.0
+                                val lon = doc.getDouble("longitude") ?: 0.0
 
-                            val docLocation = Location("")
-                            docLocation.latitude = lat
-                            docLocation.longitude = lon
+                                val docLocation = Location("")
+                                docLocation.latitude = lat
+                                docLocation.longitude = lon
 
-                            val distanceInM = patientLocation!!.distanceTo(docLocation)
+                                val distanceInM = patientLocation!!.distanceTo(docLocation)
 
-                            val doctorLatLng = LatLng(lat, lon)
-                            // Always show the distance in the marker title
-                            val distanceInKm = distanceInM / 1000.0
-                            val markerTitle = String.format("%s (%.2fkm away)", doctorName, distanceInKm)
+                                val doctorLatLng = LatLng(lat, lon)
+                                val distanceInKm = distanceInM / 1000.0
+                                val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
 
-                            mMap.addMarker(
-                                MarkerOptions()
-                                    .position(doctorLatLng)
-                                    .title(markerTitle)
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                            )
+                                val marker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(doctorLatLng)
+                                        .title(markerTitle)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                                )
+                                marker?.tag = doctor
+                            }
                         }
                     }
                 }

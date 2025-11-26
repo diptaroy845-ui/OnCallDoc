@@ -25,12 +25,10 @@ class DoctorAdapter(
 
     inner class DoctorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.doctor_name)
-        private val specialityTextView: TextView = itemView.findViewById(R.id.doctor_speciality)
         private val distanceTextView: TextView = itemView.findViewById(R.id.doctor_distance)
 
         fun bind(doctor: Doctor) {
             nameTextView.text = doctor.name
-            specialityTextView.text = doctor.speciality
             distanceTextView.text = String.format("%.2f km away", doctor.distance / 1000.0)
 
             itemView.setOnClickListener {
