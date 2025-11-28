@@ -19,11 +19,12 @@
         android:layout_height="wrap_content"
         android:hint="Enter your name"/>
 
-    <Spinner
-        android:id="@+id/doctor_speciality_spinner"
+    <EditText
+        android:id="@+id/doctor_phone_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"/>
+        android:hint="Phone Number"
+        android:inputType="phone"/>
 
     <Button
         android:id="@+id/save_doctor_profile_btn"

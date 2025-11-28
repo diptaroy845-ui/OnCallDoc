@@ -2,7 +2,9 @@ package com.example.oncalldoc
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,12 +12,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 class CreateDoctorProfileActivity : AppCompatActivity() {
 
     private lateinit var nameInput: EditText
-    private lateinit var specialitySpinner: Spinner
+    private lateinit var phoneInput: EditText
     private lateinit var saveProfileBtn: Button
     private lateinit var firestore: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
-
-    private val specialities = arrayOf("Cardiologist", "Dermatologist", "Pediatrician", "Neurologist", "General Physician")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,22 +25,19 @@ class CreateDoctorProfileActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
 
         nameInput = findViewById(R.id.doctor_name_input)
-        specialitySpinner = findViewById(R.id.doctor_speciality_spinner)
+        phoneInput = findViewById(R.id.doctor_phone_input) // Corrected this to use phone input
         saveProfileBtn = findViewById(R.id.save_doctor_profile_btn)
-
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, specialities)
-        specialitySpinner.adapter = adapter
 
         saveProfileBtn.setOnClickListener {
             val name = nameInput.text.toString().trim()
-            val speciality = specialitySpinner.selectedItem.toString()
+            val phone = phoneInput.text.toString().trim()
 
-            if (name.isNotEmpty()) {
+            if (name.isNotEmpty() && phone.isNotEmpty()) {
                 val uid = auth.currentUser?.uid
                 if (uid != null) {
                     val userUpdates = mapOf(
                         "name" to name,
-                        "speciality" to speciality
+                        "phone" to phone
                     )
                     firestore.collection("users").document(uid)
                         .update(userUpdates)
@@ -54,7 +51,7 @@ class CreateDoctorProfileActivity : AppCompatActivity() {
                         }
                 }
             } else {
-                Toast.makeText(this, "Please enter your name", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Please enter your name and phone number", Toast.LENGTH_SHORT).show()
             }
         }
     }

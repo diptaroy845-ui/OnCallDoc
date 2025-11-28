@@ -7,12 +7,15 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.text.InputType
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.firebase.geofire.GeoFireUtils
@@ -27,6 +30,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.tasks.Task
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -37,6 +41,7 @@ class DoctorHomeActivity : AppCompatActivity() {
     private lateinit var onlineSwitch: SwitchMaterial
     private lateinit var ordersCountText: TextView
     private lateinit var backButton: ImageButton
+    private lateinit var settingsButton: ImageButton
     private lateinit var updateLocationButton: Button
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var pendingLocationAction: (() -> Unit)? = null
@@ -70,10 +75,15 @@ class DoctorHomeActivity : AppCompatActivity() {
         onlineSwitch = findViewById(R.id.online_switch)
         ordersCountText = findViewById(R.id.orders_count_text)
         backButton = findViewById(R.id.backFromDocHome)
+        settingsButton = findViewById(R.id.settings_doctor)
         updateLocationButton = findViewById(R.id.update_location_button)
 
         backButton.setOnClickListener {
             finish()
+        }
+
+        settingsButton.setOnClickListener {
+            showSettingsMenu()
         }
 
         updateLocationButton.setOnClickListener {
@@ -97,7 +107,6 @@ class DoctorHomeActivity : AppCompatActivity() {
                         onlineSwitch.text = if (isChecked) "Online" else "Offline"
                         Toast.makeText(this, "Status updated", Toast.LENGTH_SHORT).show()
                         if (isChecked) {
-                            // When doctor goes online, automatically update their location
                             checkLocationPermissionAndSettings { updateDoctorLocation() }
                         }
                     }
@@ -106,7 +115,6 @@ class DoctorHomeActivity : AppCompatActivity() {
                     }
             }
 
-            // Listen for order count changes
             firestore.collection("orders")
                 .whereEqualTo("doctorId", uid)
                 .addSnapshotListener { snapshots, e ->
@@ -118,6 +126,88 @@ class DoctorHomeActivity : AppCompatActivity() {
                     ordersCountText.text = "You have $count orders"
                 }
         }
+    }
+
+    private fun showSettingsMenu() {
+        val options = arrayOf("Edit Profile", "Delete Account", "Logout")
+        AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> startActivity(Intent(this, EditDoctorProfileActivity::class.java))
+                    1 -> showDeleteAccountDialog()
+                    2 -> showLogoutConfirmationDialog()
+                }
+            }
+            .show()
+    }
+
+    private fun showLogoutConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to log out?")
+            .setPositiveButton("Logout") { _, _ ->
+                auth.signOut()
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showDeleteAccountDialog() {
+        val passwordInput = EditText(this)
+        passwordInput.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        passwordInput.hint = "Enter your password to confirm"
+
+        AlertDialog.Builder(this)
+            .setTitle("Delete Account")
+            .setMessage("This action is permanent. To delete your account, please enter your password.")
+            .setView(passwordInput)
+            .setPositiveButton("Delete") { _, _ ->
+                val password = passwordInput.text.toString()
+                if (password.isNotEmpty()) {
+                    deleteUserAccount(password)
+                } else {
+                    Toast.makeText(this, "Password is required.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteUserAccount(password: String) {
+        val user = auth.currentUser
+        if (user?.email == null) return
+
+        val credential = EmailAuthProvider.getCredential(user.email!!, password)
+
+        user.reauthenticate(credential)
+            .addOnSuccessListener {
+                val uid = user.uid
+                firestore.collection("users").document(uid).delete()
+                    .addOnSuccessListener {
+                        user.delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Account deleted successfully.", Toast.LENGTH_SHORT).show()
+                                val intent = Intent(this, LoginActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                startActivity(intent)
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(this, "Failed to delete account: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Failed to delete user data: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .addOnFailureListener { 
+                Toast.makeText(this, "Authentication failed. Incorrect password.", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun checkLocationPermissionAndSettings(action: () -> Unit) {

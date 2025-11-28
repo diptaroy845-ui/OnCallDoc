@@ -22,9 +22,8 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
-import com.firebase.geofire.GeoFireUtils
-import com.firebase.geofire.GeoLocation
 import com.google.firebase.firestore.ListenerRegistration
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -138,7 +137,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (location != null) {
                     patientLocation = location
                     val patientLatLng = LatLng(location.latitude, location.longitude)
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 10f)) // Zoom out a bit more
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(patientLatLng, 10f))
                     mMap.addCircle(CircleOptions().center(patientLatLng).radius(2000.0).strokeColor(Color.BLUE).strokeWidth(2f).fillColor(Color.parseColor("#220000FF")))
                     listenForDoctorUpdates()
                 } else {
@@ -150,7 +149,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun listenForDoctorUpdates() {
         if (patientLocation == null) return
 
-        firestoreListener?.remove() // Remove any old listener
+        firestoreListener?.remove()
 
         val query = firestore.collection("users")
             .whereEqualTo("role", "doctor")
@@ -159,36 +158,51 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         firestoreListener = query.addSnapshotListener { snapshots, e ->
             if (e != null) {
                 Log.w("MapsActivity", "Listen failed.", e)
-                // This is where you will see the error about the missing index
-                Toast.makeText(this, "Error fetching doctors. Check Logcat for index link.", Toast.LENGTH_LONG).show()
                 return@addSnapshotListener
             }
 
-            mMap.clear() // Clear all markers before redrawing
-            // Re-add patient's circle every time we redraw
-            val patientLatLng = LatLng(patientLocation!!.latitude, patientLocation!!.longitude)
-            mMap.addCircle(CircleOptions().center(patientLatLng).radius(2000.0).strokeColor(Color.BLUE).strokeWidth(2f).fillColor(Color.parseColor("#220000FF")))
+            for (dc in snapshots!!.documentChanges) {
+                val doctor = dc.document.toObject(Doctor::class.java)
+                val doctorUid = dc.document.id
 
+                when (dc.type) {
+                    DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                        if (doctor.latitude != null && doctor.longitude != null) {
+                            val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
+                            val existingMarker = doctorMarkers[doctorUid]
 
-            for (doc in snapshots!!.documents) {
-                val doctor = doc.toObject(Doctor::class.java)
-                if (doctor?.latitude != null && doctor.longitude != null) {
-                    val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
-                    
-                    val docLocation = Location("")
-                    docLocation.latitude = doctor.latitude
-                    docLocation.longitude = doctor.longitude
-                    val distanceInM = patientLocation!!.distanceTo(docLocation)
-                    val distanceInKm = distanceInM / 1000.0
-                    val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
-
-                    val marker = mMap.addMarker(
-                        MarkerOptions()
-                            .position(doctorLatLng)
-                            .title(markerTitle)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                    )
-                    marker?.tag = doctor
+                            if (existingMarker == null) {
+                                // Add new marker
+                                val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
+                                val distanceInM = patientLocation!!.distanceTo(docLocation)
+                                val distanceInKm = distanceInM / 1000.0
+                                val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                                
+                                val marker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(doctorLatLng)
+                                        .title(markerTitle)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                                )
+                                marker?.tag = doctor
+                                if (marker != null) {
+                                    doctorMarkers[doctorUid] = marker
+                                }
+                            } else {
+                                // Update existing marker
+                                existingMarker.position = doctorLatLng
+                                val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
+                                val distanceInM = patientLocation!!.distanceTo(docLocation)
+                                val distanceInKm = distanceInM / 1000.0
+                                existingMarker.title = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                                existingMarker.tag = doctor
+                            }
+                        }
+                    }
+                    DocumentChange.Type.REMOVED -> {
+                        doctorMarkers[doctorUid]?.remove()
+                        doctorMarkers.remove(doctorUid)
+                    }
                 }
             }
         }

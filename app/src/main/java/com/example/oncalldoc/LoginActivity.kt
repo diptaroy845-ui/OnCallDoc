@@ -21,9 +21,18 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.login_page)
 
         auth = FirebaseAuth.getInstance()
+
+        // If the user is already logged in, redirect them to the correct home screen.
+        if (auth.currentUser != null) {
+            redirectUser(auth.currentUser!!.uid)
+            return // Skip displaying the login UI
+        }
+
+        // Only show the login page if the user is not logged in.
+        setContentView(R.layout.login_page)
+
         firestore = FirebaseFirestore.getInstance()
 
         emailInput = findViewById(R.id.email_input)
@@ -37,7 +46,7 @@ class LoginActivity : AppCompatActivity() {
             val password = passwordInput.text.toString().trim()
 
             if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, getString(R.string.please_fill_all_fields), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -49,7 +58,7 @@ class LoginActivity : AppCompatActivity() {
                     if (task.isSuccessful) {
                         redirectUser(task.result.user!!.uid)
                     } else {
-                        Toast.makeText(this, getString(R.string.login_failed, task.exception?.message), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Login Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                         loadingSpinner.visibility = View.GONE
                         loginBtn.isEnabled = true
                     }
@@ -62,31 +71,34 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun redirectUser(uid: String) {
+        firestore = FirebaseFirestore.getInstance()
         firestore.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
                 val role = doc.getString("role") ?: "patient"
                 val name = doc.getString("name")
 
-                if (name == null) {
-                    val intent = if (role == "patient") {
+                val intent = if (name == null) {
+                    // New user, needs to create a profile
+                    if (role == "patient") {
                         Intent(this, CreatePatientProfileActivity::class.java)
                     } else {
                         Intent(this, CreateDoctorProfileActivity::class.java)
                     }
-                    startActivity(intent)
                 } else {
-                    val intent = if (role == "patient") {
+                    // Existing user, go to home screen
+                    if (role == "patient") {
                         Intent(this, PatientHomeActivity::class.java)
                     } else {
                         Intent(this, DoctorHomeActivity::class.java)
                     }
-                    startActivity(intent)
                 }
-                finish() // Destroy LoginActivity so user can't go back to it
+                startActivity(intent)
+                finish() // This is crucial to prevent the user from coming back to the login screen.
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, getString(R.string.error_fetching_role, e.message), Toast.LENGTH_SHORT).show()
-                recreate()
+                Toast.makeText(this, "Error fetching user details: ${e.message}", Toast.LENGTH_SHORT).show()
+                // If something goes wrong, stay on the login page
+                setContentView(R.layout.login_page) 
             }
     }
 }

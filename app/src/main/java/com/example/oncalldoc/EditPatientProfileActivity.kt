@@ -1,0 +1,104 @@
+package com.example.oncalldoc
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
+class EditPatientProfileActivity : AppCompatActivity() {
+
+    private lateinit var nameInput: EditText
+    private lateinit var currentPasswordInput: EditText
+    private lateinit var newPasswordInput: EditText
+    private lateinit var confirmNewPasswordInput: EditText
+    private lateinit var saveChangesBtn: Button
+
+    private lateinit var auth: FirebaseAuth
+    private lateinit var firestore: FirebaseFirestore
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_edit_patient_profile)
+
+        auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
+
+        nameInput = findViewById(R.id.edit_patient_name)
+        currentPasswordInput = findViewById(R.id.edit_current_password)
+        newPasswordInput = findViewById(R.id.edit_new_password)
+        confirmNewPasswordInput = findViewById(R.id.edit_confirm_new_password)
+        saveChangesBtn = findViewById(R.id.save_changes_btn)
+
+        loadPatientProfile()
+
+        saveChangesBtn.setOnClickListener {
+            saveChanges()
+        }
+    }
+
+    private fun loadPatientProfile() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            firestore.collection("users").document(userId).get()
+                .addOnSuccessListener { document ->
+                    if (document != null) {
+                        nameInput.setText(document.getString("name"))
+                    }
+                }
+                .addOnFailureListener { 
+                    Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    private fun saveChanges() {
+        val name = nameInput.text.toString().trim()
+        val currentPassword = currentPasswordInput.text.toString()
+        val newPassword = newPasswordInput.text.toString()
+        val confirmNewPassword = confirmNewPasswordInput.text.toString()
+
+        if (name.isEmpty()) {
+            Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (currentPassword.isEmpty()) {
+            Toast.makeText(this, "Please enter your current password to save changes", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val user = auth.currentUser
+        val credential = EmailAuthProvider.getCredential(user?.email!!, currentPassword)
+
+        user.reauthenticate(credential)
+            .addOnSuccessListener {
+                val userId = user.uid
+                val profileUpdates = mapOf("name" to name)
+
+                firestore.collection("users").document(userId).update(profileUpdates)
+                    .addOnSuccessListener { 
+                        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show()
+                    }
+
+                if (newPassword.isNotEmpty()) {
+                    if (newPassword == confirmNewPassword) {
+                        user.updatePassword(newPassword)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Password updated successfully", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(this, "New passwords do not match", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                finish()
+            }
+            .addOnFailureListener { 
+                Toast.makeText(this, "Authentication failed. Please check your current password.", Toast.LENGTH_LONG).show()
+            }
+    }
+}
