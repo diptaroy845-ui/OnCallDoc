@@ -161,44 +161,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val doctor = dc.document.toObject(Doctor::class.java)
                 val doctorUid = dc.document.id
 
-                when (dc.type) {
-                    DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
-                        if (doctor.isOnline == true && doctor.latitude != null && doctor.longitude != null) {
-                            val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
-                            val existingMarker = doctorMarkers[doctorUid]
+                if (doctor.isOnline && doctor.latitude != null && doctor.longitude != null) {
+                    // Doctor is online and has a location, add or update their marker
+                    val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
+                    val existingMarker = doctorMarkers[doctorUid]
 
-                            val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
-                            val distanceInM = patientLocation?.distanceTo(docLocation) ?: 0f
-                            val distanceInKm = distanceInM / 1000.0
-                            val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                    val docLocation = Location("").apply { latitude = doctor.latitude!!; longitude = doctor.longitude!! }
+                    val distanceInM = patientLocation?.distanceTo(docLocation) ?: 0f
+                    val distanceInKm = distanceInM / 1000.0
+                    val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
 
-                            if (existingMarker == null) {
-                                val marker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(doctorLatLng)
-                                        .title(markerTitle)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                                )
-                                marker?.tag = doctor
-                                if (marker != null) {
-                                    doctorMarkers[doctorUid] = marker
-                                }
-                            } else {
-                                existingMarker.position = doctorLatLng
-                                existingMarker.title = markerTitle
-                                existingMarker.tag = doctor
-                            }
-                        } else {
-                            // Doctor is offline or has no location, remove marker
-                            doctorMarkers[doctorUid]?.remove()
-                            doctorMarkers.remove(doctorUid)
+                    if (existingMarker == null) {
+                        // Add new marker
+                        val marker = mMap.addMarker(
+                            MarkerOptions()
+                                .position(doctorLatLng)
+                                .title(markerTitle)
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                        )
+                        marker?.tag = doctor
+                        if (marker != null) {
+                            doctorMarkers[doctorUid] = marker
                         }
+                    } else {
+                        // Update existing marker
+                        existingMarker.position = doctorLatLng
+                        existingMarker.title = markerTitle
+                        existingMarker.tag = doctor
                     }
-                    DocumentChange.Type.REMOVED -> {
-                        // This handles if a doctor document is ever deleted
-                        doctorMarkers[doctorUid]?.remove()
-                        doctorMarkers.remove(doctorUid)
-                    }
+                } else {
+                    // Doctor is offline or has no location, remove their marker
+                    doctorMarkers[doctorUid]?.remove()
+                    doctorMarkers.remove(doctorUid)
                 }
             }
         }
