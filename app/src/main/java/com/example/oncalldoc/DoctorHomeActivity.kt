@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.common.api.ResolvableApiException
@@ -39,11 +40,11 @@ class DoctorHomeActivity : AppCompatActivity() {
     private lateinit var firestore: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
     private lateinit var onlineSwitch: SwitchMaterial
-    private lateinit var ordersCountText: TextView
     private lateinit var backButton: ImageButton
     private lateinit var settingsButton: ImageButton
     private lateinit var updateLocationButton: Button
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var conversationsRecyclerView: RecyclerView
     private var pendingLocationAction: (() -> Unit)? = null
 
     private val requestPermissionLauncher =
@@ -73,7 +74,7 @@ class DoctorHomeActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         onlineSwitch = findViewById(R.id.online_switch)
-        ordersCountText = findViewById(R.id.orders_count_text)
+        conversationsRecyclerView = findViewById(R.id.conversations_recycler_view)
         backButton = findViewById(R.id.backFromDocHome)
         settingsButton = findViewById(R.id.settings_doctor)
         updateLocationButton = findViewById(R.id.update_location_button)
@@ -115,16 +116,7 @@ class DoctorHomeActivity : AppCompatActivity() {
                     }
             }
 
-            firestore.collection("orders")
-                .whereEqualTo("doctorId", uid)
-                .addSnapshotListener { snapshots, e ->
-                    if (e != null) {
-                        return@addSnapshotListener
-                    }
-
-                    val count = snapshots?.size() ?: 0
-                    ordersCountText.text = "You have $count orders"
-                }
+            // TODO: We will implement the conversation list here in the next step
         }
     }
 

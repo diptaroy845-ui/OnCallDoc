@@ -147,13 +147,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun listenForDoctorUpdates() {
-        if (patientLocation == null) return
-
         firestoreListener?.remove()
 
-        val query = firestore.collection("users")
-            .whereEqualTo("role", "doctor")
-            .whereEqualTo("isOnline", true)
+        val query = firestore.collection("users").whereEqualTo("role", "doctor")
 
         firestoreListener = query.addSnapshotListener { snapshots, e ->
             if (e != null) {
@@ -167,17 +163,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 when (dc.type) {
                     DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
-                        if (doctor.latitude != null && doctor.longitude != null) {
+                        if (doctor.isOnline == true && doctor.latitude != null && doctor.longitude != null) {
                             val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
                             val existingMarker = doctorMarkers[doctorUid]
 
+                            val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
+                            val distanceInM = patientLocation?.distanceTo(docLocation) ?: 0f
+                            val distanceInKm = distanceInM / 1000.0
+                            val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+
                             if (existingMarker == null) {
-                                // Add new marker
-                                val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
-                                val distanceInM = patientLocation!!.distanceTo(docLocation)
-                                val distanceInKm = distanceInM / 1000.0
-                                val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
-                                
                                 val marker = mMap.addMarker(
                                     MarkerOptions()
                                         .position(doctorLatLng)
@@ -189,17 +184,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                                     doctorMarkers[doctorUid] = marker
                                 }
                             } else {
-                                // Update existing marker
                                 existingMarker.position = doctorLatLng
-                                val docLocation = Location("").apply { latitude = doctor.latitude; longitude = doctor.longitude }
-                                val distanceInM = patientLocation!!.distanceTo(docLocation)
-                                val distanceInKm = distanceInM / 1000.0
-                                existingMarker.title = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                                existingMarker.title = markerTitle
                                 existingMarker.tag = doctor
                             }
+                        } else {
+                            // Doctor is offline or has no location, remove marker
+                            doctorMarkers[doctorUid]?.remove()
+                            doctorMarkers.remove(doctorUid)
                         }
                     }
                     DocumentChange.Type.REMOVED -> {
+                        // This handles if a doctor document is ever deleted
                         doctorMarkers[doctorUid]?.remove()
                         doctorMarkers.remove(doctorUid)
                     }
