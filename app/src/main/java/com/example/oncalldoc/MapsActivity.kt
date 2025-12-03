@@ -149,11 +149,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun listenForDoctorUpdates() {
         firestoreListener?.remove()
 
-        val query = firestore.collection("users").whereEqualTo("role", "doctor")
+        // This is the new, correct, and efficient query.
+        val query = firestore.collection("users")
+            .whereEqualTo("role", "doctor")
+            .whereEqualTo("isOnline", true)
 
         firestoreListener = query.addSnapshotListener { snapshots, e ->
             if (e != null) {
-                Log.w("MapsActivity", "Listen failed.", e)
+                // This is the expected error for the missing index. Check the Logcat!
+                Log.e("MapsActivity", "Listen failed. This is expected if the index is not created yet.", e)
                 return@addSnapshotListener
             }
 
@@ -161,38 +165,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val doctor = dc.document.toObject(Doctor::class.java)
                 val doctorUid = dc.document.id
 
-                if (doctor.isOnline && doctor.latitude != null && doctor.longitude != null) {
-                    // Doctor is online and has a location, add or update their marker
-                    val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
-                    val existingMarker = doctorMarkers[doctorUid]
+                when (dc.type) {
+                    DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                        if (doctor.latitude != null && doctor.longitude != null) {
+                            val doctorLatLng = LatLng(doctor.latitude, doctor.longitude)
+                            val existingMarker = doctorMarkers[doctorUid]
 
-                    val docLocation = Location("").apply { latitude = doctor.latitude!!; longitude = doctor.longitude!! }
-                    val distanceInM = patientLocation?.distanceTo(docLocation) ?: 0f
-                    val distanceInKm = distanceInM / 1000.0
-                    val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
+                            val docLocation = Location("").apply { latitude = doctor.latitude!!; longitude = doctor.longitude!! }
+                            val distanceInM = patientLocation?.distanceTo(docLocation) ?: 0f
+                            val distanceInKm = distanceInM / 1000.0
+                            val markerTitle = String.format("%s (%.2fkm away)", doctor.name, distanceInKm)
 
-                    if (existingMarker == null) {
-                        // Add new marker
-                        val marker = mMap.addMarker(
-                            MarkerOptions()
-                                .position(doctorLatLng)
-                                .title(markerTitle)
-                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                        )
-                        marker?.tag = doctor
-                        if (marker != null) {
-                            doctorMarkers[doctorUid] = marker
+                            if (existingMarker == null) {
+                                val marker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(doctorLatLng)
+                                        .title(markerTitle)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                                )
+                                marker?.tag = doctor
+                                if (marker != null) {
+                                    doctorMarkers[doctorUid] = marker
+                                }
+                            } else {
+                                existingMarker.position = doctorLatLng
+                                existingMarker.title = markerTitle
+                                existingMarker.tag = doctor
+                            }
                         }
-                    } else {
-                        // Update existing marker
-                        existingMarker.position = doctorLatLng
-                        existingMarker.title = markerTitle
-                        existingMarker.tag = doctor
                     }
-                } else {
-                    // Doctor is offline or has no location, remove their marker
-                    doctorMarkers[doctorUid]?.remove()
-                    doctorMarkers.remove(doctorUid)
+                    DocumentChange.Type.REMOVED -> {
+                        doctorMarkers[doctorUid]?.remove()
+                        doctorMarkers.remove(doctorUid)
+                    }
                 }
             }
         }
