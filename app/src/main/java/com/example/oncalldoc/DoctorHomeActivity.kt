@@ -11,7 +11,6 @@ import android.text.InputType
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -116,7 +115,7 @@ class DoctorHomeActivity : AppCompatActivity() {
                     }
             }
 
-            // TODO: We will implement the conversation list here in the next step
+            // We will set up the conversations RecyclerView in the next step
         }
     }
 
