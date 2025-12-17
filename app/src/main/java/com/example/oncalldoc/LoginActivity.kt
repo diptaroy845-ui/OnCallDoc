@@ -24,13 +24,11 @@ class LoginActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // If the user is already logged in, redirect them to the correct home screen.
         if (auth.currentUser != null) {
             redirectUser(auth.currentUser!!.uid)
-            return // Skip displaying the login UI
+            return
         }
 
-        // Only show the login page if the user is not logged in.
         setContentView(R.layout.login_page)
 
         firestore = FirebaseFirestore.getInstance()
@@ -78,14 +76,12 @@ class LoginActivity : AppCompatActivity() {
                 val name = doc.getString("name")
 
                 val intent = if (name == null) {
-                    // New user, needs to create a profile
                     if (role == "patient") {
                         Intent(this, CreatePatientProfileActivity::class.java)
                     } else {
                         Intent(this, CreateDoctorProfileActivity::class.java)
                     }
                 } else {
-                    // Existing user, go to home screen
                     if (role == "patient") {
                         Intent(this, PatientHomeActivity::class.java)
                     } else {
@@ -93,11 +89,10 @@ class LoginActivity : AppCompatActivity() {
                     }
                 }
                 startActivity(intent)
-                finish() // This is crucial to prevent the user from coming back to the login screen.
+                finish()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error fetching user details: ${e.message}", Toast.LENGTH_SHORT).show()
-                // If something goes wrong, stay on the login page
                 setContentView(R.layout.login_page) 
             }
     }

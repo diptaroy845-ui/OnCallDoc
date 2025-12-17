@@ -94,7 +94,6 @@ class DoctorHomeActivity : AppCompatActivity() {
         if (uid != null) {
             val doctorRef = firestore.collection("users").document(uid)
 
-            // Set initial switch state
             doctorRef.get().addOnSuccessListener {
                 val isOnline = it.getBoolean("isOnline") ?: false
                 onlineSwitch.isChecked = isOnline
@@ -114,8 +113,6 @@ class DoctorHomeActivity : AppCompatActivity() {
                         Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
                     }
             }
-
-            // We will set up the conversations RecyclerView in the next step
         }
     }
 
@@ -238,7 +235,6 @@ class DoctorHomeActivity : AppCompatActivity() {
                     val intentSenderRequest = IntentSenderRequest.Builder(exception.resolution).build()
                     locationSettingsLauncher.launch(intentSenderRequest)
                 } catch (sendEx: IntentSender.SendIntentException) {
-                    // Ignore the error.
                 }
             }
         }

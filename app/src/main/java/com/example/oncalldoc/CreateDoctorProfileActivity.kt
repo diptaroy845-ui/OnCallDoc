@@ -25,7 +25,7 @@ class CreateDoctorProfileActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
 
         nameInput = findViewById(R.id.doctor_name_input)
-        phoneInput = findViewById(R.id.doctor_phone_input) // Corrected this to use phone input
+        phoneInput = findViewById(R.id.doctor_phone_input)
         saveProfileBtn = findViewById(R.id.save_doctor_profile_btn)
 
         saveProfileBtn.setOnClickListener {

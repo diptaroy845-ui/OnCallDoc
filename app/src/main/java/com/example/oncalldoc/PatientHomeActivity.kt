@@ -147,7 +147,6 @@ class PatientHomeActivity : AppCompatActivity() {
         val credential = EmailAuthProvider.getCredential(user.email!!, password)
         user.reauthenticate(credential)
             .addOnSuccessListener {
-                // Re-authentication successful, now delete the user
                 val uid = user.uid
                 firestore.collection("users").document(uid).delete()
                     .addOnSuccessListener {
@@ -209,7 +208,6 @@ class PatientHomeActivity : AppCompatActivity() {
                     val intentSenderRequest = IntentSenderRequest.Builder(exception.resolution).build()
                     locationSettingsLauncher.launch(intentSenderRequest)
                 } catch (sendEx: IntentSender.SendIntentException) {
-                    // Ignore the error.
                 }
             }
         }

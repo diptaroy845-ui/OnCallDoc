@@ -5,8 +5,8 @@ data class Doctor(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
-    val isOnline: Boolean = false, // This was the missing property
-    val latitude: Double? = null, // Making location nullable
+    val isOnline: Boolean = false,
+    val latitude: Double? = null,
     val longitude: Double? = null,
     var distance: Double = 0.0
 )

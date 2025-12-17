@@ -149,14 +149,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun listenForDoctorUpdates() {
         firestoreListener?.remove()
 
-        // This is the new, correct, and efficient query.
         val query = firestore.collection("users")
             .whereEqualTo("role", "doctor")
             .whereEqualTo("isOnline", true)
 
         firestoreListener = query.addSnapshotListener { snapshots, e ->
             if (e != null) {
-                // This is the expected error for the missing index. Check the Logcat!
                 Log.e("MapsActivity", "Listen failed. This is expected if the index is not created yet.", e)
                 return@addSnapshotListener
             }

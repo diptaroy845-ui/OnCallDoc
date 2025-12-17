@@ -27,11 +27,9 @@ class SignupActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.signup_page)
 
-        // Initialize Firebase
         auth = FirebaseAuth.getInstance()
         firestore = FirebaseFirestore.getInstance()
 
-        // Bind UI
         emailInput = findViewById(R.id.email_input)
         passwordInput = findViewById(R.id.password_input)
         confirmPasswordInput = findViewById(R.id.confirm_password_input)
@@ -40,7 +38,6 @@ class SignupActivity : AppCompatActivity() {
         loadingSpinner = findViewById(R.id.loading_spinner)
         roleGroup = findViewById(R.id.role_group)
 
-        // Signup Button
         signupBtn.setOnClickListener {
             val email = emailInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
@@ -69,11 +66,9 @@ class SignupActivity : AppCompatActivity() {
 
             val role = if (selectedRoleId == R.id.radio_patient) "patient" else "doctor"
 
-            // Show loading
             loadingSpinner.visibility = View.VISIBLE
             signupBtn.isEnabled = false
 
-            // Firebase Signup
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
@@ -83,7 +78,6 @@ class SignupActivity : AppCompatActivity() {
                             "role" to role
                         )
 
-                        // Save user role in Firestore
                         firestore.collection("users").document(uid)
                             .set(userMap)
                             .addOnSuccessListener {
@@ -99,7 +93,6 @@ class SignupActivity : AppCompatActivity() {
                                 loadingSpinner.visibility = View.GONE
                                 signupBtn.isEnabled = true
 
-                                // Redirect to login
                                 startActivity(Intent(this, LoginActivity::class.java))
                                 finish()
                             }
@@ -120,7 +113,6 @@ class SignupActivity : AppCompatActivity() {
                 }
         }
 
-        // Redirect to Login
         loginRedirect.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()

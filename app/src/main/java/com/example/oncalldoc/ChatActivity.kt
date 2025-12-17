@@ -34,13 +34,9 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        // --- Fullscreen Code --- 
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        // Hide the status bar
         windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-        // Allow showing the status bar with a swipe gesture
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        // --- End Fullscreen Code ---
 
         firestore = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()

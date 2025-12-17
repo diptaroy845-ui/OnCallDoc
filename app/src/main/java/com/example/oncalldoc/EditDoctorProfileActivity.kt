@@ -70,7 +70,6 @@ class EditDoctorProfileActivity : AppCompatActivity() {
             return
         }
 
-        // To change any data, we must re-authenticate the user for security.
         if (currentPassword.isEmpty()) {
             Toast.makeText(this, "Please enter your current password to save changes", Toast.LENGTH_SHORT).show()
             return
@@ -81,14 +80,12 @@ class EditDoctorProfileActivity : AppCompatActivity() {
 
         user.reauthenticate(credential)
             .addOnSuccessListener {
-                // --- User re-authenticated, now we can save the changes ---
                 val userId = user.uid
                 val profileUpdates = mapOf(
                     "name" to name,
                     "phone" to phone
                 )
 
-                // Update Firestore profile
                 firestore.collection("users").document(userId).update(profileUpdates)
                     .addOnSuccessListener { 
                         Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show()
@@ -97,7 +94,6 @@ class EditDoctorProfileActivity : AppCompatActivity() {
                         Toast.makeText(this, "Failed to update profile", Toast.LENGTH_SHORT).show()
                     }
 
-                // Check if user wants to update password
                 if (newPassword.isNotEmpty()) {
                     if (newPassword == confirmNewPassword) {
                         user.updatePassword(newPassword)
@@ -112,7 +108,7 @@ class EditDoctorProfileActivity : AppCompatActivity() {
                     }
                 }
 
-                finish() // Go back to the home screen
+                finish()
             }
             .addOnFailureListener { 
                 Toast.makeText(this, "Authentication failed. Please check your current password.", Toast.LENGTH_LONG).show()
